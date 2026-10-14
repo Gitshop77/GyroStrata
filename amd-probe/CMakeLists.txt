@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.24)
+project(gyro_amd_probe LANGUAGES CXX)
+find_package(hip CONFIG REQUIRED)
+add_executable(gyro-amd-probe main.cpp)
+target_compile_features(gyro-amd-probe PRIVATE cxx_std_17)
+target_compile_definitions(gyro-amd-probe PRIVATE __HIP_PLATFORM_AMD__=1)
+target_link_libraries(gyro-amd-probe PRIVATE hip::host)

@@ -127,7 +127,8 @@ def check_sources(pins):
 
 
 def check_build(hardware):
-    marker = ROOT / "build-info.json"
+    backend = hardware['gpu'].get('backend', 'cuda')
+    marker = ROOT / ('build-info-hip.json' if backend == 'hip' else 'build-info.json')
     if not marker.is_file():
         raise RuntimeError(
             "Build provenance is missing. Run INSTALL.cmd to build this release."
@@ -142,11 +143,20 @@ def check_build(hardware):
         "binaries",
         "cuda_root",
     }
+    if backend == 'hip':
+        required = (required - {'cuda_arch', 'cuda_root'}) | {'backend', 'gpu_arch', 'hip_root', 'engine'}
     if required - set(build):
         raise RuntimeError(
             "Build provenance is incomplete. Rebuild this release with INSTALL.cmd."
         )
-    if build["cuda_arch"] != hardware["gpu"]["arch"]:
+    if backend == 'hip' and not {
+        'build-engine-hip/strata.exe', 'build-engine-hip/gyro-amd-probe.exe',
+        'build-engine-hip/amdhip64_7.dll', 'build-engine-hip/amd_comgr.dll'
+    }.issubset(build['binaries']):
+        raise RuntimeError('HIP build provenance is missing its engine, probe or runtime hashes.')
+    if build.get('backend', 'cuda') != backend:
+        raise RuntimeError('Build backend differs from the selected GPU; reinstall it.')
+    if build['gpu_arch' if backend == 'hip' else 'cuda_arch'] != hardware["gpu"]["arch"]:
         raise RuntimeError(
             "GPU architecture changed. Rebuild with INSTALL.cmd --gpu N for the selected card."
         )
@@ -170,7 +180,8 @@ def check_build(hardware):
         ):
             raise RuntimeError("Built binary differs from its provenance: " + relative)
     if "patched_file_sha256" in pins["strata"]:
-        if "build-engine/strata.exe" not in build["binaries"]:
+        expected_engine = 'build-engine-hip/strata.exe' if backend == 'hip' else 'build-engine/strata.exe'
+        if expected_engine not in build["binaries"] or (backend == 'hip' and build['engine'] != expected_engine):
             raise RuntimeError(
                 "Engine binary is missing from build provenance. Rebuild this release."
             )
@@ -179,9 +190,12 @@ def check_build(hardware):
 
 
 def check_config(cfg):
+    backend = cfg.get('_recipe_backend', 'cuda')
+    if backend not in ('cuda', 'hip'):
+        raise RuntimeError('Unknown profile backend; reinstall the profile.')
     if (
         pathlib.Path(cfg["exe"]).resolve()
-        != (ROOT / "build-engine/strata.exe").resolve()
+        != (ROOT / ('build-engine-hip/strata.exe' if backend == 'hip' else 'build-engine/strata.exe')).resolve()
     ):
         raise RuntimeError(
             "Launcher points to another engine. Run INSTALL.cmd from the desired engine folder."
@@ -267,6 +281,10 @@ def check_config(cfg):
 
 
 def engine_environment(values, build):
+    if build.get('backend') == 'hip':
+        from amd import runtime_environment, sdk_root
+        root, _ = sdk_root(build['hip_root'])
+        return runtime_environment(root, values)
     env = os.environ.copy()
     for key, value in values.items():
         if not isinstance(key, str) or not isinstance(value, str):

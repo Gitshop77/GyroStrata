@@ -17,3 +17,5 @@ Port needed changes in a separate checkout, update source/dependency/model pins,
 Update README results only from completed measurements. Preserve methodology and distinguish source changes from configuration changes. Refresh verification.json and SHA256SUMS.txt, run verify.py, and scan the tracked tree for private data and generated files before publishing.
 
 Commit the actual source-package files. Sources, builds, models, keys and private benchmark outputs stay local. A ZIP is optional; GitHub source archives already contain the committed files.
+
+AMD installations: rebuild using the same `INSTALL.cmd --backend hip --hip-root "SDK path" --model-dir "model path"` command. HIP keeps its own build/provenance; the CUDA build.cmd does not rebuild a HIP installation.

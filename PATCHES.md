@@ -29,3 +29,7 @@ The interleaved experts.bin groups unchanged native expert bytes for SSD reads. 
 Installation/launch tools add source and binary checks, model/pack validation, capacity checks, profile locks, rollback, safe key removal and process cleanup. They support one Gyro-M text profile. A full standalone Strata fork is optional: the pinned source plus patch reconstructs this engine reproducibly.
 
 The 8192 prefill experiment changed chunk sizing; it was not an expert-cache size change or a whole-engine redesign.
+
+## Experimental AMD installation
+
+The HIP installer builds the same pinned patched source with STRATA_ENABLE_HIP. The model kernels are inherited from that source; this addition supplies HIP toolchain selection, GPU identity, WDDM memory monitoring and parity-gated installation. CUDA and HIP keep separate build files. AMD hardware performance is not yet validated.

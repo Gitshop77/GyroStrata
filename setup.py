@@ -90,6 +90,8 @@ def main():
         help="Omit to install the model files present in the folder",
     )
     p.add_argument("--gpu", type=int, default=0)
+    p.add_argument('--backend', choices=['cuda', 'hip'], default='cuda')
+    p.add_argument('--hip-root', help='ROCm development SDK root for --backend hip')
     p.add_argument("--workers", type=int)
     p.add_argument(
         "--check",
@@ -117,7 +119,7 @@ def main():
     a = p.parse_args()
     if os.name != "nt":
         raise RuntimeError(
-            "This installer is for Windows/NVIDIA. AMD and Linux need separately tested backends."
+            "This installer requires 64-bit Windows."
         )
     if a.delete_api_key:
         if a.api_key:
@@ -142,6 +144,9 @@ def main():
         raise RuntimeError("Use 64-bit Python for these large GGUF files.")
     if not shutil.which("git"):
         raise RuntimeError("Install Git for Windows, then rerun INSTALL.cmd.")
+    if a.backend == 'hip':
+        from amd_setup import install as install_hip
+        return install_hip(a)
     from hardware import resource_info, adapt
 
     hardware = resource_info(a.gpu)

@@ -42,7 +42,8 @@ def main():
 def run_profile(path, check=False):
     cfg = read_json(path)
     require_free_port(cfg["host"], cfg["port"])
-    hardware = resource_info(cfg.get("_recipe_gpu_index", 0))
+    hardware = (resource_info(cfg.get('_recipe_gpu_index', 0), 'hip')
+                if cfg.get('_recipe_backend') == 'hip' else resource_info(cfg.get('_recipe_gpu_index', 0)))
     build = check_build(hardware)
     check_config(cfg)
     cfg, values, selection = adapt(
@@ -95,22 +96,27 @@ def run_profile(path, check=False):
             except psutil.Error:
                 pass
             try:
-                output = subprocess.check_output(
-                    [
-                        "nvidia-smi",
-                        f"--id={hardware['gpu']['uuid']}",
-                        "--query-gpu=memory.used",
-                        "--format=csv,noheader,nounits",
-                    ],
-                    text=True,
-                    timeout=10,
-                )
-                used = int(output.splitlines()[0])
+                if hardware['gpu'].get('backend') == 'hip':
+                    from amd import memory_used
+                    used = memory_used(hardware['gpu']['luid'])
+                else:
+                    output = subprocess.check_output(
+                        [
+                            "nvidia-smi",
+                            f"--id={hardware['gpu']['uuid']}",
+                            "--query-gpu=memory.used",
+                            "--format=csv,noheader,nounits",
+                        ],
+                        text=True,
+                        timeout=10,
+                    )
+                    used = int(output.splitlines()[0])
             except (
                 ValueError,
                 IndexError,
                 OSError,
                 subprocess.SubprocessError,
+                RuntimeError,
             ) as error:
                 raise RuntimeError(
                     "GPU telemetry unavailable; stopped the owned model."

@@ -1,4 +1,4 @@
-"""Resource-aware defaults for the Windows/NVIDIA 12 GiB GPU, 32 GiB RAM engine."""
+"""Resource-aware defaults for Windows CUDA and experimental HIP backends."""
 
 import argparse, copy, csv, json, math, os, re, subprocess
 
@@ -7,7 +7,10 @@ RAM_FLOOR_MIB = 512
 MIN_DRIVER_MAJOR = 580
 
 
-def gpu_info(index=None):
+def gpu_info(index=None, backend=None):
+    if backend == 'hip':
+        from amd import gpu_info as hip_gpu_info
+        return hip_gpu_info(0 if index is None else index)
     try:
         index = int(os.environ.get("GYRO_GPU_ID", "0")) if index is None else int(index)
         if index < 0:
@@ -45,7 +48,7 @@ def gpu_info(index=None):
         ) from error
 
 
-def resource_info(index=None):
+def resource_info(index=None, backend=None, *, detected_gpu=None):
     if os.name != "nt":
         raise RuntimeError("This release requires 64-bit Windows.")
     import ctypes
@@ -80,7 +83,8 @@ def resource_info(index=None):
         cores = max(1, (os.cpu_count() or 2) // 2)
     avx2 = bool(ctypes.windll.kernel32.IsProcessorFeaturePresent(40))
     return dict(
-        gpu=gpu_info(index),
+        gpu=(detected_gpu if detected_gpu is not None else
+             gpu_info(index, backend) if backend else gpu_info(index)),
         physical_cores=cores,
         avx2=avx2,
         ram_gib=total / 2**30,
@@ -92,6 +96,7 @@ def adapt(profile, environment, hardware, workers=None, tuning=None):
     cfg = copy.deepcopy(profile)
     env = dict(environment)
     gpu = hardware["gpu"]
+    backend = gpu.get('backend', 'cuda')
     tuning = dict(tuning or {})
     unknown = set(tuning) - {
         "pcie_fraction",
@@ -107,11 +112,17 @@ def adapt(profile, environment, hardware, workers=None, tuning=None):
         )
     if not hardware.get("avx2", True):
         raise ValueError("This engine requires an AVX2-capable CPU.")
-    if int(gpu["arch"]) < 75:
+    if backend not in ('cuda', 'hip'):
+        raise ValueError('Unknown GPU backend.')
+    if backend == 'hip':
+        from amd import ARCHS
+        if gpu['arch'] not in ARCHS:
+            raise ValueError('Unsupported experimental HIP architecture.')
+    elif int(gpu["arch"]) < 75:
         raise ValueError(
             "This CUDA engine needs an NVIDIA GPU with compute capability 7.5 or newer."
         )
-    if "driver" in gpu:
+    if backend == 'cuda' and "driver" in gpu:
         driver = re.fullmatch(r"(\d+)\.\d+(?:\.\d+)?", gpu["driver"])
         if not driver or int(driver[1]) < MIN_DRIVER_MAJOR:
             raise ValueError(
@@ -119,7 +130,7 @@ def adapt(profile, environment, hardware, workers=None, tuning=None):
             )
     if gpu["total_mib"] < 11500:
         raise ValueError(
-            "This full-context engine needs a 12 GiB or larger NVIDIA GPU."
+            "This full-context engine needs a 12 GiB or larger discrete GPU."
         )
     if hardware["ram_gib"] < 30:
         raise ValueError("This full-context engine needs 32 GB or more system RAM.")
@@ -131,6 +142,8 @@ def adapt(profile, environment, hardware, workers=None, tuning=None):
     # Leave room for full host KV, a near-full conversation snapshot, Python and OS.
     # The engine independently rebalances expert RAM and sizes VRAM after its weights load.
     experts = min(16, max(0, math.floor(hardware["available_ram_gib"] - 10)))
+    if backend == 'hip':
+        experts = min(experts, 13)
     if experts < 4:
         raise ValueError(
             "Close memory-heavy applications first: at least 14 GiB available RAM is needed."
@@ -161,7 +174,7 @@ def adapt(profile, environment, hardware, workers=None, tuning=None):
         if type(tasks) is not int or not 64 <= tasks <= 4096:
             raise ValueError("Task override must be an integer from 64 to 4096.")
     set_arg("--pool-tasks", tasks)
-    set_arg("--conversation-cache-min-free-mib", RAM_FLOOR_MIB)
+    set_arg("--conversation-cache-min-free-mib", 1024 if backend == 'hip' else RAM_FLOOR_MIB)
     fraction = tuning.get("pcie_fraction", 0.75)
     if (
         isinstance(fraction, bool)
@@ -174,7 +187,11 @@ def adapt(profile, environment, hardware, workers=None, tuning=None):
         cfg["args"] += ["--pcie-frac", str(fraction)]
     else:
         set_arg("--pcie-frac", fraction)
-    base_reserve = tuning.get("vram_reserve_mib", 1024)
+    if backend == 'hip' and 'pcie_fraction' not in tuning:
+        at = cfg['args'].index('--pcie-frac')
+        del cfg['args'][at:at+2]
+        fraction = 'auto'
+    base_reserve = tuning.get("vram_reserve_mib", 2048 if backend == 'hip' else 1024)
     if type(base_reserve) is not int or not 1024 <= base_reserve <= 8192:
         raise ValueError("VRAM reserve must be an integer from 1024 to 8192 MiB.")
     # Larger GPUs may use the engine, but its absolute 11.5 GiB GPU cap stays fixed.
@@ -184,6 +201,10 @@ def adapt(profile, environment, hardware, workers=None, tuning=None):
         STRATA_PARTIAL_PIN_GIB=str(min(8, max(2, experts // 2))),
         CUDA_VISIBLE_DEVICES=gpu["uuid"],
     )
+    if backend == 'hip':
+        env.pop('CUDA_VISIBLE_DEVICES', None)
+        env.update(HIP_VISIBLE_DEVICES=str(gpu['index']), ROCR_VISIBLE_DEVICES='',
+                   STRATA_PREFILL_CPU_SHARE='0', STRATA_PARTIAL_PIN='0')
     selection = dict(
         gpu_name=gpu["name"],
         cuda_arch=gpu["arch"],
@@ -196,7 +217,10 @@ def adapt(profile, environment, hardware, workers=None, tuning=None):
         pcie_fraction=fraction,
         vram_reserve_mib=base_reserve + max(0, gpu["total_mib"] - 12288),
         tuning_overrides=tuning,
+        backend=backend,
     )
+    if backend == 'hip':
+        selection['hip_arch'] = selection.pop('cuda_arch')
     return cfg, env, selection
 
 
@@ -204,11 +228,12 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser()
     p.add_argument("action", choices=["arch", "inspect"])
     p.add_argument("--gpu", type=int)
+    p.add_argument('--backend', choices=['cuda', 'hip'], default='cuda')
     a = p.parse_args()
     if a.action == "arch":
-        g = gpu_info(a.gpu)
-        if int(g["arch"]) < 75:
+        g = gpu_info(a.gpu, a.backend)
+        if a.backend == 'cuda' and int(g["arch"]) < 75:
             raise SystemExit("GPU compute capability below the supported 7.5 floor")
         print(g["arch"])
     else:
-        print(json.dumps(resource_info(a.gpu), indent=2))
+        print(json.dumps(resource_info(a.gpu, a.backend), indent=2))

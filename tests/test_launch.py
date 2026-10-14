@@ -16,10 +16,11 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 import launch
 import runtime
+import amd
 
 
 class LaunchGuard(unittest.TestCase):
-    def run_fixture(self, used, available, check=False):
+    def run_fixture(self, used, available, check=False, backend='cuda'):
         with tempfile.TemporaryDirectory() as temp:
             root = pathlib.Path(temp)
             profile = root / "M.json"
@@ -40,6 +41,11 @@ class LaunchGuard(unittest.TestCase):
                 available_ram_gib=24,
             )
             proc = MagicMock(pid=424242)
+            if backend == 'hip':
+                cfg['_recipe_backend'] = 'hip'
+                cfg['_recipe_gpu_index'] = 1
+                profile.write_text(json.dumps(cfg), encoding='utf-8')
+                host['gpu'].update(backend='hip',index=1,arch='gfx1101',luid='00000000_0000abcd')
             proc.poll.return_value = None
             process = MagicMock()
             process.create_time.return_value = 123
@@ -53,6 +59,8 @@ class LaunchGuard(unittest.TestCase):
                 patch.object(launch, "require_free_port"),
                 patch.object(launch.subprocess, "Popen", return_value=proc) as start,
                 patch.object(launch.subprocess, "check_output", return_value=used),
+                patch.object(amd, 'memory_used', side_effect=used if isinstance(used, Exception) else None,
+                             return_value=used),
                 patch.object(launch.psutil, "Process", return_value=process),
                 patch.object(
                     launch.psutil,
@@ -84,6 +92,10 @@ class LaunchGuard(unittest.TestCase):
 
     def test_check_does_not_start_model(self):
         self.run_fixture("10000\n", 2**30, check=True)
+
+    def test_hip_guard_stops_owned_model_on_limit_or_missing_counter(self):
+        self.run_fixture(11777,2**30,backend='hip')
+        self.run_fixture(RuntimeError('Missing adapter counter'),2**30,backend='hip')
 
 
 class ProfileIdentity(unittest.TestCase):

@@ -25,3 +25,9 @@ build-info.json
 *.server.log
 *.config.json.tmp
 .profile.lock
+
+# Local HIP SDK paths and build products
+/.hip-config.cmake
+/build-engine-hip/
+/build-amd-probe/
+/build-info-hip.json

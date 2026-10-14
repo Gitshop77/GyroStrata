@@ -1,6 +1,6 @@
 # Hardware and tuning
 
-This is a Windows x64 baseline for **12 GB or larger NVIDIA VRAM and 32 GB or more RAM**, an **AVX2 CPU**, and a **local SSD**. Capacity alone does not guarantee compatibility or performance.
+The tested CUDA path is a Windows x64 baseline for **12 GB or larger NVIDIA VRAM and 32 GB or more RAM**, an **AVX2 CPU**, and a **local SSD**. Capacity alone does not guarantee compatibility or performance.
 
 The engine builds for the selected GPU's actual CUDA architecture. Examples of eligible 12 GB variants include RTX 3060/3080/3080 Ti (8.6), RTX 4070/4070 SUPER/4070 Ti (8.9), and RTX 5070 (12.0). Check the exact SKU: laptop and desktop cards can have different VRAM. Architecture eligibility comes from [NVIDIA's compute-capability table](https://developer.nvidia.com/cuda/gpus); it is not evidence that we benchmarked each card.
 
@@ -31,7 +31,7 @@ Use the README's Claude Code/Codex prompt, or compare these controls on identica
 - **--pcie-fraction X:** 0–1.
 - **--ram-experts-gib N:** 4–16 GiB; free-RAM safety still reduces it.
 - **--vram-reserve-mib N:** 1024–8192 MiB; increase if the GPU guard trips.
-- **--gpu N:** select the physical NVIDIA GPU; rebuild when its architecture differs.
+- **--gpu N:** select the NVIDIA GPU or HIP device; rebuild when its architecture differs.
 
 Pass controls to INSTALL.cmd with --model-dir. To change settings without rebuilding, run:
 
@@ -56,3 +56,7 @@ The included benchmark is serial and writes private results under local-results:
 ```
 
 Use run2 and run3 for independent repetitions. Keep only repeatable gains; check representative tasks, full context, reasoning and cache return as well as tok/s. Generated profiles, results and logs are excluded from Git by default.
+
+## Experimental AMD/HIP
+
+Windows 11 discrete Radeon cards with 12 GB or more dedicated VRAM may use the opt-in [HIP installer](AMD.md). It accepts the listed wave32 architectures, not every AMD GPU. ROCm/driver compatibility, quantization parity and adapter memory telemetry must pass locally. The NVIDIA compute-capability, CUDA and R580 requirements apply only to CUDA. No AMD throughput is claimed.

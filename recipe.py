@@ -261,14 +261,15 @@ def install_locked(args):
     )
     runtime = profiledir / ".gyro-recipe"
     py = HERE / ".venv/Scripts/python.exe"
-    engine = HERE / "build-engine/strata.exe"
+    backend = getattr(args, 'backend', 'cuda')
+    engine = HERE / ('build-engine-hip/strata.exe' if backend == 'hip' else 'build-engine/strata.exe')
     if not py.is_file() or not engine.is_file():
         raise RuntimeError("Run build.cmd first")
     from hardware import resource_info, adapt
     from runtime import check_build
 
-    hardware = resource_info(args.gpu)
-    check_build(hardware)
+    hardware = resource_info(args.gpu, 'hip') if backend == 'hip' else resource_info(args.gpu)
+    build = check_build(hardware)
     tuning = {
         key: getattr(args, key)
         for key in [
@@ -381,21 +382,11 @@ def install_locked(args):
                     "Interleaved expert pack is incomplete; preserve it and rerun packing before launch."
                 )
         validate_pack(pack, gguf)
-        cuda = pathlib.Path(
-            json.loads((HERE / "build-info.json").read_text(encoding="utf-8-sig"))[
-                "cuda_root"
-            ]
-        )
-        parity_env = os.environ.copy()
-        parity_env["PATH"] = (
-            str(cuda / "bin/x64")
-            + os.pathsep
-            + str(cuda / "bin")
-            + os.pathsep
-            + parity_env.get("PATH", "")
-        )
-        parity_env["CUDA_VISIBLE_DEVICES"] = hardware["gpu"]["uuid"]
-        run(HERE / "build-engine/native_expert_parity.exe", gguf, env=parity_env)
+        from runtime import engine_environment
+        visibility = ({'HIP_VISIBLE_DEVICES':str(args.gpu)} if backend == 'hip'
+                      else {'CUDA_VISIBLE_DEVICES':hardware['gpu']['uuid']})
+        parity_env = engine_environment(visibility, build)
+        run(engine.parent / 'native_expert_parity.exe', gguf, env=parity_env)
         ranking = runtime / f"expert-{name}.bin"
         if sha(HERE / "data" / ranking.name) != PINS["expert_profiles"][name]["sha256"]:
             raise RuntimeError(
@@ -423,6 +414,8 @@ def install_locked(args):
             return value
 
         cfg = resolve(template)
+        if backend == 'hip':
+            cfg['_recipe_backend'] = 'hip'
         if key:
             cfg["api_key"] = key
         else:
@@ -479,6 +472,7 @@ def main():
     s.add_argument("--profile-dir", help="Optional separate launcher directory")
     s.add_argument("--models", nargs="+", choices=["M"], default=["M"])
     s.add_argument("--gpu", type=int, default=0)
+    s.add_argument('--backend', choices=['cuda', 'hip'], default='cuda')
     s.add_argument("--workers", type=int)
     s.add_argument("--pack-m")
     auth = s.add_mutually_exclusive_group()
