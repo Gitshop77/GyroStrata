@@ -9,7 +9,7 @@
 
 See [README.md](README.md#changelog) for the short feature list and [PATCHES.md](PATCHES.md) for attribution and source changes. This is a tuned Strata baseline, not a rewrite or a universal speed guarantee.
 
-## Unreleased — AMD support
+## Unreleased - AMD support
 
 - Opt-in Windows HIP build and launcher for supported discrete Radeon architectures.
 - Separate build provenance, HIP device selection and adapter-specific WDDM VRAM monitoring.

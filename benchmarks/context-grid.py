@@ -4,7 +4,6 @@ import marshal
 import hashlib
 import importlib.util
 import json
-import os
 import pathlib
 import re
 import secrets
@@ -24,6 +23,7 @@ from hardware import resource_info, adapt
 from runtime import (
     check_build,
     check_config,
+    engine_environment,
     profile_lock,
     stop_owned as stop_process_tree,
 )
@@ -82,33 +82,6 @@ def sha(path):
     return hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
 
 
-def launcher_environment(path):
-    name = "M"
-    env = os.environ.copy()
-    for k, v in json.loads(
-        (MODEL_DIR / ".gyro-recipe" / f"{name}.env.json").read_text(
-            encoding="utf-8-sig"
-        )
-    ).items():
-        if v:
-            env[k] = v
-        else:
-            env.pop(k, None)
-    env["CUDA_PATH"] = json.loads(
-        (ROOT / "build-info.json").read_text(encoding="utf-8-sig")
-    )["cuda_root"]
-    if env.get("CUDA_PATH"):
-        cuda = pathlib.Path(env["CUDA_PATH"])
-        env["PATH"] = (
-            str(cuda / "bin/x64")
-            + os.pathsep
-            + str(cuda / "bin")
-            + os.pathsep
-            + env.get("PATH", "")
-        )
-    return env
-
-
 def stop_owned(proc, seen):
     if proc is not None:
         stop_process_tree(proc, seen)
@@ -119,8 +92,8 @@ def run_model(item):
     saved = OUT / (model + ".results.json")
     original = pathlib.Path(item["config"])
     cfg = json.loads(original.read_text(encoding="utf-8-sig"))
-    hw = resource_info(cfg.get("_recipe_gpu_index", 0))
-    check_build(hw)
+    hw = resource_info(cfg.get("_recipe_gpu_index", 0), cfg.get("_recipe_backend", "cuda"))
+    build = check_build(hw)
     check_config(cfg)
     name = "M"
     cfg, selected_env, resource_selection = adapt(
@@ -150,12 +123,7 @@ def run_model(item):
         identities[cfg["exe"]] == item["engine_sha256"],
         "Installed binary differs from final manifest",
     )
-    environment = launcher_environment(item["launcher"])
-    for key, value in selected_env.items():
-        if value:
-            environment[key] = value
-        else:
-            environment.pop(key, None)
+    environment = engine_environment(selected_env, build)
     evidence = dict(
         version=2,
         files=identities,
@@ -245,43 +213,46 @@ def run_model(item):
     state = dict(
         peak_vram_mib=0,
         min_available_ram_mib=999999,
-        peak_temperature_c=0,
+        peak_temperature_c=None,
         over_limit=False,
         samples=0,
         telemetry_error=None,
     )
     stage_memory = dict(
-        peak_vram_mib=0, min_available_ram_mib=999999, peak_temperature_c=0, samples=0
+        peak_vram_mib=0, min_available_ram_mib=999999, peak_temperature_c=None, samples=0
     )
     lock = threading.Lock()
 
     def monitor():
         while not stopped.is_set():
             try:
-                values = subprocess.check_output(
-                    [
-                        "nvidia-smi",
-                        "--id=" + env.get("CUDA_VISIBLE_DEVICES", "0"),
-                        "--query-gpu=memory.used,temperature.gpu",
-                        "--format=csv,noheader,nounits",
-                    ],
-                    text=True,
-                    timeout=8,
-                )
-                used, temp = [int(v.strip()) for v in values.splitlines()[0].split(",")]
+                if hw["gpu"].get("backend") == "hip":
+                    from amd import memory_used
+                    used, temp = memory_used(hw["gpu"]["luid"]), None
+                else:
+                    values = subprocess.check_output(
+                        [
+                            "nvidia-smi",
+                            "--id=" + env.get("CUDA_VISIBLE_DEVICES", "0"),
+                            "--query-gpu=memory.used,temperature.gpu",
+                            "--format=csv,noheader,nounits",
+                        ],
+                        text=True,
+                        timeout=8,
+                    )
+                    used, temp = [int(v.strip()) for v in values.splitlines()[0].split(",")]
                 available = psutil.virtual_memory().available / 1048576
                 with lock:
                     for record in (state, stage_memory):
                         record["peak_vram_mib"] = max(record["peak_vram_mib"], used)
-                        record["peak_temperature_c"] = max(
-                            record["peak_temperature_c"], temp
-                        )
+                        if temp is not None:
+                            record["peak_temperature_c"] = max(record["peak_temperature_c"] or temp, temp)
                         record["min_available_ram_mib"] = min(
                             record["min_available_ram_mib"], available
                         )
                     state["samples"] += 1
                     stage_memory["samples"] += 1
-                    if used > limit:
+                    if used > limit or available < resource_selection["ram_floor_mib"]:
                         state["over_limit"] = True
                 if proc is not None and proc.poll() is None:
                     try:
@@ -291,7 +262,7 @@ def run_model(item):
                             seen[child.pid] = child.create_time()
                     except psutil.Error:
                         pass
-                if used > limit:
+                if used > limit or available < resource_selection["ram_floor_mib"]:
                     stop_owned(proc, seen)
                     break
             except (
@@ -300,6 +271,7 @@ def run_model(item):
                 IndexError,
                 subprocess.SubprocessError,
                 psutil.Error,
+                RuntimeError,
             ) as error:
                 with lock:
                     state["telemetry_error"] = f"{type(error).__name__}: {error}"
@@ -469,7 +441,7 @@ def run_model(item):
                 stage_memory.update(
                     peak_vram_mib=0,
                     min_available_ram_mib=999999,
-                    peak_temperature_c=0,
+                    peak_temperature_c=None,
                     samples=0,
                 )
             text = prompt(target)

@@ -39,6 +39,8 @@ Pass controls to INSTALL.cmd with --model-dir. To change settings without rebuil
 .\.venv\Scripts\python.exe recipe.py install --model-dir "C:\Your Model Folder" --workers 8 --pool-tasks 128 --pcie-fraction 0.5
 ```
 
+For HIP installations, include `--backend hip` in that command.
+
 That is an experiment, not a recommended replacement. Omit overrides to restore defaults. The launcher preserves chosen overrides while checking current free RAM.
 
 CUDA_PATH selects Toolkit 13.2 when multiple toolkits are installed. For portable VS tools, set GYRO_VCVARS to their vcvars64.bat; do not disable compiler checks.

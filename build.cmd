@@ -2,7 +2,7 @@
 setlocal DisableDelayedExpansion
 set "GYRO_RECIPE_ROOT=%~dp0"
 cd /d "%GYRO_RECIPE_ROOT%"
-if defined GYRO_VCVARS call "%GYRO_VCVARS%" >nul
+if defined GYRO_VCVARS call "%%GYRO_VCVARS%%" >nul
 if errorlevel 1 exit /b 1
 where cl >nul 2>&1
 if errorlevel 1 (

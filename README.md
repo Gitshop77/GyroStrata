@@ -8,11 +8,11 @@ NVIDIA/CUDA is tested. **AMD/HIP on Windows 11 is experimental:** [AMD setup](AM
 
 ## Install
 
-NVIDIA prerequisites: [Git](https://git-scm.com/downloads/win), [Python 3.12â€“3.14](https://www.python.org/downloads/windows/), [VS 2022 C++ Build Tools](https://aka.ms/vs/17/release/vs_BuildTools.exe) with C++/Windows SDK, [CUDA Toolkit 13.2](https://developer.nvidia.com/cuda-toolkit-archive), and NVIDIA driver R580+.
+NVIDIA prerequisites: [Git](https://git-scm.com/downloads/win), [Python 3.12-3.14](https://www.python.org/downloads/windows/), [VS 2022 C++ Build Tools](https://aka.ms/vs/17/release/vs_BuildTools.exe) with C++/Windows SDK, [CUDA Toolkit 13.2](https://developer.nvidia.com/cuda-toolkit-archive), and NVIDIA driver R580+.
 
 Allow **120 GiB for weights/pack**, **4 GiB for engine files**, plus prerequisites. Keep the engine folder in a permanent location.
 
-**Double-click:** DOWNLOAD-MODEL.cmd â†’ choose a folder â†’ INSTALL.cmd â†’ Start-Gyro-M-256K.cmd beside the weights.
+**Double-click:** DOWNLOAD-MODEL.cmd -> choose a folder -> INSTALL.cmd -> Start-Gyro-M-256K.cmd beside the weights.
 
 **PowerShell:** Change the model path:
 
@@ -31,7 +31,7 @@ The installer downloads source, applies patches, builds for your GPU and checks 
 
 ## Run
 
-API: **http://127.0.0.1:8080/v1** Â· Model: **qwen38-gyro-m** Â· Stop: **Ctrl+C**.
+API: **http://127.0.0.1:8080/v1** | Model: **qwen38-gyro-m** | Stop: **Ctrl+C**.
 
 No API key by default. Binding to **0.0.0.0** allows network access. Optional: install with **--api-key**; the key is saved in **.gyro-recipe\api-key.txt**. **DELETE-API-KEY.cmd** removes it; restart afterward.
 
@@ -48,12 +48,12 @@ Three runs on one NVIDIA 12 GB / 32 GB PC: synthetic Python continuation, thinki
 
 | Context | Prefill tok/s (mean, range) | Output tok/s (mean, range) |
 |---|---:|---:|
-| 8K | 953 (951â€“956) | 29.7 (28.0â€“30.8) |
-| 32K | 1,552 (1,542â€“1,558) | 36.4 (35.7â€“36.8) |
-| 64K | 1,725 (1,725â€“1,726) | 38.4 (36.9â€“40.6) |
-| 128K | 1,791 (1,787â€“1,794) | 37.7 (36.9â€“38.3) |
-| 192K | 1,785 (1,782â€“1,786) | 36.8 (35.6â€“37.8) |
-| Near 256K | 1,755 (1,753â€“1,758) | 36.6 (35.4â€“37.8) |
+| 8K | 953 (951-956) | 29.7 (28.0-30.8) |
+| 32K | 1,552 (1,542-1,558) | 36.4 (35.7-36.8) |
+| 64K | 1,725 (1,725-1,726) | 38.4 (36.9-40.6) |
+| 128K | 1,791 (1,787-1,794) | 37.7 (36.9-38.3) |
+| 192K | 1,785 (1,782-1,786) | 36.8 (35.6-37.8) |
+| Near 256K | 1,755 (1,753-1,758) | 36.6 (35.4-37.8) |
 
 Long-context retrieval, arithmetic and cache-return checks passed. The 32K GPU cache does **not** limit attention to 32K; leave room for output within 256K.
 
@@ -68,7 +68,7 @@ Long-context retrieval, arithmetic and cache-return checks passed. The 32K GPU c
 - Source/model/pack verification, parity tests, memory guards and Windows CI.
 - Profile locks, atomic configs, rollback, process cleanup and optional API keys.
 
-[Patch attribution](PATCHES.md) Â· [Updates and rollback](UPDATING.md)
+[Patch attribution](PATCHES.md) | [Updates and rollback](UPDATING.md)
 
 ## Tune with Claude Code or Codex
 

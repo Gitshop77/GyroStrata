@@ -1,7 +1,6 @@
 """Opt-in HIP build/install; retains the independent CUDA build and provenance."""
 import hashlib
 import json
-import pathlib
 import shutil
 import subprocess
 import sys
@@ -52,7 +51,7 @@ def install(options):
     subprocess.run([str(python), '-m', 'pip', 'install', '-r', str(ROOT / 'sources/strata/requirements.txt')], check=True)
     env = runtime_environment(sdk, unmask=True)
     env.update(GYRO_HIP_ROOT=str(sdk).replace('\\', '/'), GYRO_HIP_CXX=str(compiler).replace('\\', '/'),
-               GYRO_HIP_CC=str(compiler.with_name('clang.exe')).replace('\\', '/'), GYRO_VCVARS=compiler_env)
+               GYRO_VCVARS=compiler_env)
     (ROOT / '.hip-config.cmake').write_text(cmake_cache(sdk, compiler, ROOT / 'sources/llama'), encoding='utf-8')
     env['GYRO_HIP_PROBE'] = '1'
     run_batch(ROOT / 'build-hip.cmd', env=env, cwd=ROOT)

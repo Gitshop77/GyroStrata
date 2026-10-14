@@ -210,7 +210,7 @@ def adapt(profile, environment, hardware, workers=None, tuning=None):
         cuda_arch=gpu["arch"],
         physical_cores=hardware["physical_cores"],
         ram_experts_gib=experts,
-        partial_pin_gib=int(env["STRATA_PARTIAL_PIN_GIB"]),
+        partial_pin_gib=0 if env.get("STRATA_PARTIAL_PIN") == "0" else int(env["STRATA_PARTIAL_PIN_GIB"]),
         gpu_limit_mib=limit,
         ram_floor_mib=RAM_FLOOR_MIB,
         pool_tasks=tasks,

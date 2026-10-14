@@ -3,8 +3,7 @@ setlocal DisableDelayedExpansion
 cd /d "%~dp0"
 if not defined GYRO_HIP_ROOT exit /b 1
 if not defined GYRO_HIP_CXX exit /b 1
-if not defined GYRO_VCVARS exit /b 1
-call "%GYRO_VCVARS%" >nul
+if defined GYRO_VCVARS call "%%GYRO_VCVARS%%" >nul
 if errorlevel 1 exit /b 1
 set "HIP_PLATFORM=amd"
 set "HIP_PATH=%GYRO_HIP_ROOT%"
