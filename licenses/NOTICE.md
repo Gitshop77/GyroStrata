@@ -1,0 +1,1 @@
+Strata and imported Gyro integration retain their upstream MIT notices. The pinned agentionai llama.cpp dependency retains the ggml authors' MIT license. No model weights are redistributed; obtain them under the model repository's terms. data/expert-*.bin contain only ranked layer/expert IDs and routing frequencies, not prompts or model tensors.

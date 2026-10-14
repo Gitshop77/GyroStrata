@@ -1,0 +1,83 @@
+{
+  "strata": {
+    "url": "https://github.com/Niko1221/Strata.git",
+    "revision": "a0116b2782a5b82622358c04a06496485d12b2d6",
+    "patch_sha256": "4ada54769f7db3e5f0da13c8ced339a3e661634badceb0adc247906ff5e1fe00",
+    "patched_file_sha256": {
+      "CMakeLists.txt": "6f363a0c23cc5444b488e12ee5e660e406d0edfd3bb08b9352edf2be767a61d7",
+      "include/strata/artifact/gguf_reader.hpp": "1b627f716edc7c2856cee38d9f6d5f2e84ecad37dbeafa84039a3a5a4750388b",
+      "include/strata/core/async_job.hpp": "7807e7ef2f10cf2eb2322f66ef48e5e0b40038ce3548f0060919423af82d2116",
+      "include/strata/core/expert_source.hpp": "c50595fc645a4ea1f4aa426036da279665734c011ea754a8b76a5a86b6f7887b",
+      "include/strata/core/peer_experts.hpp": "66dea1b5ac4bfc2b12a923992a8bab0277e22841631532d536b9cedc9493f658",
+      "include/strata/core/remote_experts.hpp": "f7123fe0aa806e4c1072b2c274ee6dc80b63e061e7887de8baaf74dccbe81ec6",
+      "include/strata/core/verify.hpp": "fbe15080980c0fd9618fb571d368c1b679359ba900da19cd465391e15b466945",
+      "include/strata/kernels/cpu/expert_layout.hpp": "adfef6e56811d85158ceeb246f80ade8fc003e95b157a025324649b80363be7a",
+      "include/strata/kernels/cpu/hadamard.hpp": "b367c7957dfdc4be3b301b3803cf045d0af1805f523629226d629226f06cbb48",
+      "include/strata/kernels/cpu/native_expert.hpp": "191e5d12d888bb94adcf13825a12e05d95df7d3685a16f01a45c9753f820c591",
+      "include/strata/kernels/cpu/pool.hpp": "98b47d4db5a373f3c526f4bf066f9192869e7750c77837624b8aac1a82e1edc5",
+      "include/strata/kernels/cpu/tq_cpu.hpp": "f703977341a0c39d4406f5d3343df661d7dbb9cfa54a91723f419ec6ac51a8c2",
+      "include/strata/kernels/iq_kernels.hpp": "c203133a5c0046e2f268e59ee3ee3265ee74af5dd2bb959b3259955c725575a2",
+      "include/strata/program/conv_cache.hpp": "2f246d4e70414c16949d64d3a4f7d7908427b20eeac849a2ec0efc7c7c7331b3",
+      "include/strata/spec/draft_policy.hpp": "8f8e14a5c28afc81c0e40776e464c01428d63b482f0f245d8626052e4b28dd4e",
+      "serve/server.py": "44b677e4f51943ff562130abb443575835b5935715a68bec70c712bf91c72619",
+      "src/core/expert_source.cpp": "8b4cb5d500912a51bc585f26eacf082279e527aca8cbb5ba14afeb09528a4974",
+      "src/core/peer_experts.cpp": "6f09ce3165928afefdffe4a55facfdac631905f946710f48123923b995c48d88",
+      "src/core/remote_experts.cpp": "ba69919dc647eb544189132eccc0fb2791365cfed2b55821a68d4de58b5c792f",
+      "src/core/verify.cpp": "e0c9f2b312f83ea0039d29e053d6308fda023b2c9015910822ef4786f11e49e4",
+      "src/kernels/cpu/expert_layout.cpp": "df9b3e16de6b2f9ad5acbbb10e33e0884994f4f68c2d9e2e5a090b040fb9bbaa",
+      "src/kernels/cpu/hadamard.cpp": "99f02a91fbce310a3f7476f6f62bfa0cd4bfbc1d18ed0b1c83845ef34e552aba",
+      "src/kernels/cpu/native_expert.cpp": "9340f55f9ee39f1385a3893ab14006ba68c50116b2631845a5504bebb052d28c",
+      "src/kernels/cpu/native_hadamard_test.cpp": "6d58dfd848432ad59aaa458307be9e9395986677c8237f12b39b9584548c2d37",
+      "src/kernels/cpu/pool.cpp": "3705908382d31ee5fc7bd531d1be2908d0fec83adc8390180e975f0ddc2e83d3",
+      "src/kernels/cpu/pool_tasks_test.cpp": "1528315baa9646950b16000ae934352567427400805afffc5e48841208cd5159",
+      "src/kernels/cpu/tq_avx2.cpp": "fd89928930e2cba1982ec17d471bbb6e89e963117ac9d1c964b429a1dd4d46da",
+      "src/kernels/cpu/tq_avx512.cpp": "515b6560f8df40d8bc471280e3415d8758adc349604711772fc07ad02d3cc4e9",
+      "src/kernels/cpu/tq_cpu.cpp": "33624b4ddeb7e0d1b0183791e63047ae76c8858ac1453ec9e852ce987a3c3c1e",
+      "src/kernels/cpu/tq_cpu_parity.cpp": "48f2f38d431dd068afa36f07cc301b25260d63be535840d6b90e23a0d1969f49",
+      "src/kernels/cpu/tq_states.hpp": "32b4f127a8d15c44e6afdf9f0428cdc105a0018b539e58d9644a602e047afec0",
+      "src/kernels/cuda/iq_kernels.cu": "5c68717e7cdfce961f0c7df1f9b6675fa8a1a3fa29302e2134dd074f3c13225b",
+      "src/kernels/cuda/tq_lut_i8.cuh": "cbdece9c33f8c8343b9296ff0341009c1db42a83ed6803cc18eed64d158c8016",
+      "src/kernels/native_expert_parity.cpp": "505e7e83f80b909d499f75e7dbc9e7f22ee9e5ccff16bd8b693311dd88533a84",
+      "src/prefill/moe_mmq.cu": "04c712494d2eee13b7d4776049f5dd267f3602af06e6c620d0ad24c4e0167061",
+      "src/prefill/prefill.cpp": "0c1e0b7ae115a6947b6f8282e41896161cbac00f618f64b8cd0a5258ce7e7d30",
+      "src/program/conv_cache_test.cpp": "391d1cb0b2c36ab8bf48e624d98ec7198ddaba032ac50c4debe4af0ab43a5854",
+      "src/program/generate.cpp": "e34bc6274c375e362c017b7a4c0da1c3097e2a5757429c691f04f474a7bc3c2a",
+      "src/spec/draft_policy.cpp": "97545e58ba02df60b5b692a4096855cf0fe08950cf92bd3ee72e2fdbc54a3984",
+      "tests/core/async_job_test.cpp": "8769db329954afd8ba2f4285257472bf4fe9ff048ae72df851d1cbdd642daafc",
+      "tests/core/file_expert_source_test.cpp": "55a14889b409f9d59d51280f72f73e85e37a5d26a21de615839f14c74a9ba62f",
+      "tests/hip/prefill_mmq_parity.cpp": "9a889062ea0892af84828f281c8de1c20b36173882e80e68f901b8642a0ec5fd",
+      "third_party/ggml/ggml-common-tq.h": "b91026a8c20189e07750370fccb23c5651aeb10c4a334f9c4f811b365260ff5b",
+      "tools/embd_bf16_pack.py": "9e06083d0ea7515e0dddd16231aafbd7a72e6eb7e39f3b7b628f1f23c458dd6c",
+      "tools/gguf_reader.py": "ac2b4ca126c9b858599a64e7772669001f0b2ca3e057ededb8eb646460d7e707",
+      "tools/iq_pack.py": "a673e80ddfab8efb0e61659ec9bae3f3f7cc4662eb734acdd03f529dd894feb6",
+      "tools/test_iq_pack.py": "3b08311e92e96737eafa50b727fc81affb0f4032440a41ac5aea845af7d7dbf0"
+    }
+  },
+  "llama": {
+    "url": "https://github.com/agentionai/llama.cpp.git",
+    "revision": "dc255f2a4b6e4211b555b0c05260b2523281f314",
+    "patch_required": false
+  },
+  "models": {
+    "repo": "agentionai/Qwen3.8-Flash-Next-Gyro-GGUF",
+    "revision": "1ada08422e404aca51ab9df665f089f34c419c6b",
+    "files": [
+      {
+        "rfilename": "Qwen3.8-Flash-Next-Gyro-M-TQ2_0.gguf",
+        "blobId": "39e792a4b264a440e29b13de3980ace3b61f8ba2",
+        "size": 91965774272,
+        "lfs": {
+          "sha256": "7aa36d15131d255179ab6c87fa9c9f81a0b541fc9e81e959d4c3e29eb20feb5f",
+          "size": 91965774272,
+          "pointerSize": 136
+        }
+      }
+    ]
+  },
+  "expert_profiles": {
+    "M": {
+      "sha256": "6d59287febe74d5722dd77f255d0fe7c40bba8a20f60f9fdfeaaf942a9606721",
+      "size": 196632
+    }
+  }
+}

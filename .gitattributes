@@ -1,0 +1,4 @@
+* text=auto eol=lf
+*.bin -text
+*.png -text
+patches/*.patch -text
